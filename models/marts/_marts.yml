@@ -1,0 +1,70 @@
+version: 2
+
+models:
+  - name: rpt_department_cost_rollup
+    description: "Q01 · Encounters and cost rolled up the department hierarchy (recursive CTE)."
+  - name: rpt_daily_bed_occupancy
+    description: "Q02 · Occupied inpatient beds per day of 2025 with a 7-day moving average."
+    columns:
+      - name: day
+        data_tests: [unique, not_null]
+  - name: rpt_readmission_rates
+    description: "Q03 · 30-day inpatient readmission rate by department and quarter, plus hospital total."
+    columns:
+      - name: department
+        data_tests: [unique]
+      - name: readmission_rate_pct
+        data_tests:
+          - in_range:
+              arguments: {min_value: 0, max_value: 100}
+  - name: rpt_top_physicians
+    description: "Q04 · Top 3 physicians per department by encounters (ties kept)."
+  - name: rpt_monthly_cost_trend
+    description: "Q05 · Monthly cost with running total, month-over-month change and moving average."
+    columns:
+      - name: month
+        data_tests: [unique, not_null]
+  - name: rpt_length_of_stay_percentiles
+    description: "Q06 · Median and 90th percentile length of stay per department."
+  - name: fct_medication_adherence
+    description: "Q07 · Proportion of days covered (PDC) per patient and drug, from merged fill periods."
+    columns:
+      - name: pdc
+        data_tests:
+          - not_null
+          - in_range:
+              arguments: {min_value: 0, max_value: 1}
+      - name: adherence_status
+        data_tests:
+          - accepted_values:
+              arguments: {values: ['adherent', 'non-adherent']}
+  - name: rpt_cohort_retention
+    description: "Q08 · Monthly patient cohorts and the share returning in each of the next 6 months."
+  - name: rpt_hba1c_trends
+    description: "Q09 · Diabetic patients grouped by HbA1c trend, with share at the <7% target."
+  - name: rpt_comorbidity_lift
+    description: "Q10 · Support, confidence and lift for every pair of chronic conditions."
+    columns:
+      - name: lift
+        data_tests: [not_null]
+  - name: rpt_frequent_ed_users
+    description: "Q11 · Patients with 3+ emergency visits in a rolling 90-day window."
+    columns:
+      - name: patient_id
+        data_tests: [unique, not_null]
+  - name: rpt_cost_concentration
+    description: "Q12 · Cost deciles: share and cumulative share of total spending."
+  - name: dim_patient_intake_golden
+    description: "Q13 · One golden record per person resolved from duplicated intake forms."
+    columns:
+      - name: match_key
+        data_tests: [unique, not_null]
+      - name: golden_intake_id
+        data_tests: [unique]
+  - name: rpt_data_quality_scorecard
+    description: "Q14 · Data quality rules with failed rows, tolerance and PASS/WARN/FAIL status."
+    columns:
+      - name: status
+        data_tests:
+          - accepted_values:
+              arguments: {values: ['PASS', 'WARN', 'FAIL']}

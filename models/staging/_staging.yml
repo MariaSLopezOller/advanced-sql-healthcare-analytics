@@ -1,0 +1,105 @@
+version: 2
+
+# Known, deliberately planted defects are tested with severity: warn so they are reported
+# on every run without blocking the build. The data quality scorecard mart counts them too.
+
+models:
+  - name: stg_departments
+    description: Department hierarchy (Hospital > Division > Department).
+    columns:
+      - name: department_id
+        data_tests: [unique, not_null]
+      - name: parent_department_id
+        data_tests:
+          - relationships:
+              arguments: {to: ref('stg_departments'), field: department_id}
+
+  - name: stg_physicians
+    columns:
+      - name: physician_id
+        data_tests: [unique, not_null]
+      - name: department_id
+        data_tests:
+          - relationships:
+              arguments: {to: ref('stg_departments'), field: department_id}
+
+  - name: stg_patients
+    columns:
+      - name: patient_id
+        data_tests: [unique, not_null]
+      - name: sex
+        data_tests:
+          - accepted_values:
+              arguments: {values: ['F', 'M']}
+      - name: age_at_year_end
+        data_tests:
+          - in_range:
+              arguments: {min_value: 0, max_value: 110}
+
+  - name: stg_encounters
+    description: One row per visit. Defects are flagged (has_valid_dates, is_open_stay), not dropped.
+    columns:
+      - name: encounter_id
+        data_tests: [unique, not_null]
+      - name: patient_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('stg_patients'), field: patient_id}
+      - name: physician_id
+        description: One planted orphan (physician 999) breaks referential integrity.
+        data_tests:
+          - relationships:
+              arguments: {to: ref('stg_physicians'), field: physician_id}
+              config: {severity: warn}
+      - name: encounter_type
+        data_tests:
+          - accepted_values:
+              arguments: {values: ['outpatient', 'emergency', 'inpatient']}
+      - name: total_cost
+        data_tests:
+          - in_range:
+              arguments: {min_value: 0, max_value: 100000}
+      - name: length_of_stay_days
+        description: Negative for two planted records whose discharge was typed before admission.
+        data_tests:
+          - in_range:
+              arguments: {min_value: 0, max_value: 365}
+              config: {severity: warn}
+
+  - name: stg_diagnoses
+    columns:
+      - name: encounter_id
+        data_tests:
+          - relationships:
+              arguments: {to: ref('stg_encounters'), field: encounter_id}
+
+  - name: stg_prescriptions
+    description: Pharmacy fills. Each covers [start_date, end_date), end_date exclusive.
+    columns:
+      - name: prescription_id
+        data_tests: [unique, not_null]
+      - name: days_supply
+        data_tests:
+          - accepted_values:
+              arguments: {values: [30, 90]}
+              config: {quote: false}
+
+  - name: stg_lab_results
+    columns:
+      - name: lab_result_id
+        data_tests: [unique, not_null]
+      - name: is_plausible
+        description: Three planted HbA1c entry errors (0.0, 45.0, 99.9).
+        data_tests:
+          - accepted_values:
+              arguments: {values: [true]}
+              config: {quote: false, severity: warn}
+
+  - name: stg_patient_intake
+    description: Raw intake forms, normalised. Duplicates are expected and resolved in dim_patient_intake_golden.
+    columns:
+      - name: intake_id
+        data_tests: [unique, not_null]
+      - name: match_key
+        data_tests: [not_null]

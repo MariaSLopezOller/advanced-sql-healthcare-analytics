@@ -1,0 +1,24 @@
+physician_id,full_name,department_id,hire_date
+1,Dr. Lucia Delgado,5,2011-03-04
+2,Dr. Alvaro Jimenez,5,2008-02-18
+3,Dr. Ivan Sanchez,5,2020-03-06
+4,Dr. Alba Romero,6,2005-09-18
+5,Dr. Lucia Lopez,6,2009-11-27
+6,Dr. Alvaro Dominguez,6,2018-07-03
+7,Dr. Sergio Martin,7,2021-01-22
+8,Dr. Noa Ortega,7,2017-03-23
+9,Dr. Mario Jimenez,7,2015-01-28
+10,Dr. Lucia Gomez,8,2020-08-29
+11,Dr. Mario Diaz,8,2011-03-27
+12,Dr. Sofia Martin,8,2022-02-15
+13,Dr. Elena Sanchez,8,2007-01-30
+14,Dr. Pablo Moreno,9,2024-01-04
+15,Dr. Diego Gil,9,2010-12-07
+16,Dr. Hugo Delgado,9,2015-04-22
+17,Dr. Sergio Sanchez,9,2013-06-28
+18,Dr. Sergio Hernandez,10,2023-08-09
+19,Dr. Noa Gil,10,2024-04-30
+20,Dr. Diego Ramos,10,2009-04-25
+21,Dr. Hugo Molina,11,2010-02-10
+22,Dr. Javier Lopez,11,2024-03-08
+23,Dr. Alvaro Sanchez,11,2013-07-11

@@ -1,0 +1,41 @@
+name: healthcare_analytics
+version: "1.0.0"
+config-version: 2
+profile: healthcare_analytics
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+analysis-paths: ["analyses"]
+
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  # Analyses look at calendar year 2025; the dataset is closed on this date.
+  observation_start: "2025-01-01"
+  observation_end: "2025-12-31"
+  readmission_window_days: 30
+  pdc_adherence_threshold: 0.8
+
+seeds:
+  healthcare_analytics:
+    +schema: raw
+    raw_patients:
+      +column_types: {postal_code: varchar}
+    raw_patient_intake:
+      +column_types: {phone: varchar, birth_date: varchar, email: varchar}
+    raw_encounters:
+      +column_types: {discharge_date: date}
+
+models:
+  healthcare_analytics:
+    staging:
+      +materialized: view
+      +schema: staging
+    intermediate:
+      +materialized: view
+      +schema: intermediate
+    marts:
+      +materialized: table
+      +schema: marts

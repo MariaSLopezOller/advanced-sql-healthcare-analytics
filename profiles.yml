@@ -1,0 +1,8 @@
+# Local DuckDB file: no server or credentials needed.
+healthcare_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: clinic.duckdb
+      threads: 4
