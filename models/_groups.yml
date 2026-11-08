@@ -1,0 +1,17 @@
+version: 2
+
+# Owners for the catalogue. Every model belongs to one group; the group names who answers for it.
+# The clinic is fictional, so owners are roles, not people.
+groups:
+  - name: data_platform
+    owner:
+      name: Data platform team
+    description: Staging and intermediate models. Owns typing, normalisation and quality flags.
+  - name: clinical_analytics
+    owner:
+      name: Clinical analytics team
+    description: Marts that answer the business questions.
+  - name: data_governance
+    owner:
+      name: Data governance lead
+    description: Data quality scorecard and the patient golden record.

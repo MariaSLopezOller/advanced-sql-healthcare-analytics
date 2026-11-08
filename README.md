@@ -90,6 +90,28 @@ flowchart LR
   admission and the impossible lab values are tested with `severity: warn`. They are reported on every run
   without blocking the build.
 
+## Catalogue and lineage
+
+**Browse it:** [mariaslopezoller.github.io/advanced-sql-healthcare-analytics](https://mariaslopezoller.github.io/advanced-sql-healthcare-analytics/)
+(the dbt docs site, rebuilt and published by [a GitHub Actions workflow](.github/workflows/docs.yml) on every push).
+
+![Lineage graph: raw seeds, staging, intermediate and marts, ending in three downstream reports](docs/lineage.png)
+
+The dbt docs double as a data catalogue. Every model and seed records:
+
+- **An owner.** Each model belongs to a [group](models/_groups.yml) with a named owner: data platform, clinical analytics or data governance. The clinic is fictional, so owners are roles.
+- **A data classification:** `internal`, `personal` or `special_category` (health data under UK GDPR Article 9), plus whether it holds personal data. Set by layer in [`dbt_project.yml`](dbt_project.yml), with overrides where a model differs. Aggregated marts are `internal`; patient-level ones stay `special_category`.
+- **Personal data columns**, tagged as `direct_identifier`, `quasi_identifier` or `special_category`.
+- **Downstream consumers.** [Exposures](models/_exposures.yml) end the lineage graph at the reports that use each mart, so a change can be traced to who it affects. They are illustrative.
+
+[`scripts/check_catalog.py`](scripts/check_catalog.py) runs in CI after `dbt build` and **fails the build** if any model or seed has no
+description or classification, or any model has no owner. It also prints the inventory of personal data columns (25 at the moment).
+
+```bash
+dbt docs generate && dbt docs serve      # browse the catalogue and lineage locally
+python scripts/check_catalog.py          # governance check on the catalogue
+```
+
 ## Data model
 
 | Table | Rows | Description |

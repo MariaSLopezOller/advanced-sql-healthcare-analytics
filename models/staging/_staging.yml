@@ -15,7 +15,10 @@ models:
               arguments: {to: ref('stg_departments'), field: department_id}
 
   - name: stg_physicians
+    description: Physicians and their department. Names are staff personal data.
     columns:
+      - name: full_name
+        config: {meta: {personal_data: direct_identifier}}
       - name: physician_id
         data_tests: [unique, not_null]
       - name: department_id
@@ -24,7 +27,12 @@ models:
               arguments: {to: ref('stg_departments'), field: department_id}
 
   - name: stg_patients
+    description: Patient demographics with age at the end of the observation period.
     columns:
+      - name: birth_date
+        config: {meta: {personal_data: quasi_identifier}}
+      - name: postal_code
+        config: {meta: {personal_data: quasi_identifier}}
       - name: patient_id
         data_tests: [unique, not_null]
       - name: sex
@@ -68,7 +76,10 @@ models:
               config: {severity: warn}
 
   - name: stg_diagnoses
+    description: ICD-10 codes per encounter, with 3-character category and a chronic condition flag. Health data.
     columns:
+      - name: icd10_code
+        config: {meta: {personal_data: special_category}}
       - name: encounter_id
         data_tests:
           - relationships:
@@ -86,7 +97,10 @@ models:
               config: {quote: false}
 
   - name: stg_lab_results
+    description: HbA1c and LDL results, with is_plausible flagging impossible values. Health data.
     columns:
+      - name: result_value
+        config: {meta: {personal_data: special_category}}
       - name: lab_result_id
         data_tests: [unique, not_null]
       - name: is_plausible
@@ -103,3 +117,11 @@ models:
         data_tests: [unique, not_null]
       - name: match_key
         data_tests: [not_null]
+      - name: first_name
+        config: {meta: {personal_data: direct_identifier}}
+      - name: last_name
+        config: {meta: {personal_data: direct_identifier}}
+      - name: email
+        config: {meta: {personal_data: direct_identifier}}
+      - name: phone
+        config: {meta: {personal_data: direct_identifier}}

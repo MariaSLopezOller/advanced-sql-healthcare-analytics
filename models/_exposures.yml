@@ -1,0 +1,38 @@
+version: 2
+
+# Downstream consumers, so the lineage graph ends where the data is used.
+# Illustrative: the clinic is fictional.
+exposures:
+  - name: data_quality_review
+    label: Monthly data quality review
+    type: dashboard
+    maturity: medium
+    description: Illustrative. The governance lead reviews which quality rules fail and what each mart excludes because of them.
+    owner:
+      name: Data governance lead
+    depends_on:
+      - ref('rpt_data_quality_scorecard')
+
+  - name: readmissions_and_case_management
+    label: Readmissions and case management
+    type: analysis
+    maturity: medium
+    description: Illustrative. Clinical leads review 30-day readmissions by department and the list of frequent emergency users for case management.
+    owner:
+      name: Clinical analytics team
+    depends_on:
+      - ref('rpt_readmission_rates')
+      - ref('rpt_frequent_ed_users')
+
+  - name: finance_cost_report
+    label: Cost and capacity report
+    type: dashboard
+    maturity: low
+    description: Illustrative. Finance tracks cost through the department hierarchy, monthly trend, cost concentration and bed occupancy.
+    owner:
+      name: Clinical analytics team
+    depends_on:
+      - ref('rpt_department_cost_rollup')
+      - ref('rpt_monthly_cost_trend')
+      - ref('rpt_cost_concentration')
+      - ref('rpt_daily_bed_occupancy')

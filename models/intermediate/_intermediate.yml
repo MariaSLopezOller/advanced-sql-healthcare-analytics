@@ -1,0 +1,11 @@
+version: 2
+
+models:
+  - name: int_department_tree
+    description: Every (ancestor, descendant) pair in the department hierarchy, self included, with depth and path. Recursive CTE closure table.
+  - name: int_inpatient_stays
+    description: Valid inpatient stays with the patient's next admission (LEAD) and a 30-day readmission flag. A stay is eligible only if its follow-up window fits the observation period.
+  - name: int_medication_coverage_periods
+    description: Gaps and islands. Overlapping or back-to-back pharmacy fills merged into continuous coverage periods per patient and drug, with the gap before each period.
+  - name: int_patient_conditions
+    description: One row per patient and chronic condition recorded on any of their encounters.

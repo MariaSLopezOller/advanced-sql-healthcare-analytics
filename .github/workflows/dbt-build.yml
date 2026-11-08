@@ -17,3 +17,5 @@ jobs:
       - name: Check the seeds are reproducible
         run: python scripts/generate_data.py && git diff --exit-code seeds/
       - run: dbt build
+      - name: Catalogue check (every node documented, classified and owned)
+        run: python scripts/check_catalog.py

@@ -18,9 +18,20 @@ vars:
   readmission_window_days: 30
   pdc_adherence_threshold: 0.8
 
+# Catalogue metadata. Every node carries an owner (through its group), a data classification and
+# whether it holds personal data, so `dbt docs` doubles as a data catalogue and
+# scripts/check_catalog.py can fail the build when something is undocumented.
+# Classification levels: internal < personal < special_category (UK GDPR Art. 9, health data).
+# All the data here is synthetic; the labels show how real data would be handled.
+
 seeds:
   healthcare_analytics:
     +schema: raw
+    +docs: {node_color: "#8a8f98"}
+    +meta: {layer: raw, contains_personal_data: true, data_classification: special_category}
+    raw_departments: {+meta: {contains_personal_data: false, data_classification: internal}}
+    raw_physicians: {+meta: {data_classification: personal}}
+    raw_patient_intake: {+meta: {data_classification: personal}}
     raw_patients:
       +column_types: {postal_code: varchar}
     raw_patient_intake:
@@ -33,9 +44,30 @@ models:
     staging:
       +materialized: view
       +schema: staging
+      +group: data_platform
+      +docs: {node_color: "#5a6e71"}
+      +meta: {layer: staging, contains_personal_data: true, data_classification: special_category}
+      stg_departments: {+meta: {contains_personal_data: false, data_classification: internal}}
+      stg_physicians: {+meta: {data_classification: personal}}
+      stg_patient_intake: {+meta: {data_classification: personal}}
     intermediate:
       +materialized: view
       +schema: intermediate
+      +group: data_platform
+      +docs: {node_color: "#2f9c8c"}
+      +meta: {layer: intermediate, contains_personal_data: true, data_classification: special_category}
+      int_department_tree: {+meta: {contains_personal_data: false, data_classification: internal}}
     marts:
       +materialized: table
       +schema: marts
+      +group: clinical_analytics
+      +docs: {node_color: "#0d7c74"}
+      # Aggregated marts hold no personal data; patient-level ones stay special category.
+      +meta: {layer: marts, contains_personal_data: false, data_classification: internal}
+      fct_medication_adherence: {+meta: {contains_personal_data: true, data_classification: special_category}}
+      rpt_cohort_retention: {+meta: {contains_personal_data: false, data_classification: internal}}
+      rpt_hba1c_trends: {+meta: {contains_personal_data: false, data_classification: internal}}
+      rpt_frequent_ed_users: {+meta: {contains_personal_data: true, data_classification: special_category}}
+      rpt_top_physicians: {+meta: {contains_personal_data: true, data_classification: personal}}
+      dim_patient_intake_golden: {+group: data_governance, +meta: {contains_personal_data: true, data_classification: personal}}
+      rpt_data_quality_scorecard: {+group: data_governance}

@@ -19,6 +19,9 @@ models:
               arguments: {min_value: 0, max_value: 100}
   - name: rpt_top_physicians
     description: "Q04 · Top 3 physicians per department by encounters (ties kept)."
+    columns:
+      - name: full_name
+        config: {meta: {personal_data: direct_identifier}}
   - name: rpt_monthly_cost_trend
     description: "Q05 · Monthly cost with running total, month-over-month change and moving average."
     columns:
@@ -61,6 +64,14 @@ models:
         data_tests: [unique, not_null]
       - name: golden_intake_id
         data_tests: [unique]
+      - name: first_name
+        config: {meta: {personal_data: direct_identifier}}
+      - name: last_name
+        config: {meta: {personal_data: direct_identifier}}
+      - name: email
+        config: {meta: {personal_data: direct_identifier}}
+      - name: phone
+        config: {meta: {personal_data: direct_identifier}}
   - name: rpt_data_quality_scorecard
     description: "Q14 · Data quality rules with failed rows, tolerance and PASS/WARN/FAIL status."
     columns:
