@@ -71,3 +71,8 @@ models:
       rpt_top_physicians: {+meta: {contains_personal_data: true, data_classification: personal}}
       dim_patient_intake_golden: {+group: data_governance, +meta: {contains_personal_data: true, data_classification: personal}}
       rpt_data_quality_scorecard: {+group: data_governance}
+    semantic:
+      +materialized: table
+      +schema: semantic
+      +group: data_platform
+      +meta: {layer: semantic, contains_personal_data: false, data_classification: internal}

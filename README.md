@@ -16,7 +16,7 @@ python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 
-dbt build                          # loads seeds, builds 26 models, runs 50 tests
+dbt build                          # loads seeds, builds 27 models, runs 52 tests
 python scripts/preview.py          # prints the first rows of every mart
 python scripts/preview.py readmission --rows 20
 ```
@@ -63,6 +63,8 @@ flowchart LR
     ST --> I[intermediate<br/>reusable logic]
     ST --> M[marts<br/>one model per question]
     I --> M
+    M --> SL[semantic layer<br/>metrics defined once]
+    I --> SL
 ```
 
 ```
@@ -71,10 +73,11 @@ flowchart LR
 │   ├── staging/        stg_*: casting, normalisation, quality flags (views)
 │   ├── intermediate/   int_*: hierarchy closure, inpatient stays with LEAD,
 │   │                   medication coverage periods (gaps & islands), patient conditions
-│   └── marts/          14 tables, one per business question
+│   ├── marts/          14 tables, one per business question
+│   └── semantic/       MetricFlow semantic models, metrics and the time spine
 ├── macros/         safe_pct() and schema naming
 ├── tests/          singular tests + a custom generic test (in_range)
-└── scripts/        data generator and a results preview
+└── scripts/        data generator, results preview, catalogue and metrics checks
 ```
 
 **Modelling choices**
@@ -111,6 +114,33 @@ description or classification, or any model has no owner. It also prints the inv
 dbt docs generate && dbt docs serve      # browse the catalogue and lineage locally
 python scripts/check_catalog.py          # governance check on the catalogue
 ```
+
+## Semantic layer
+
+The marts answer fixed questions. The semantic layer lets anyone ask a new one without
+rewriting the definition of the metric. Each metric lives once in
+[`models/semantic/_semantic_layer.yml`](models/semantic/_semantic_layer.yml), with a description and an owner,
+and MetricFlow writes the SQL when someone asks for it by name.
+
+| Metric | Built on | Value (2025) |
+|---|---|---:|
+| `new_patients` | `dim_patient_intake_golden` (one row per real person) | 322 |
+| `intake_forms_received` | `stg_patient_intake` (forms as submitted, duplicates included) | 439 |
+| `readmission_rate_30d` | `int_inpatient_stays` (eligible discharges only) | 19.8% |
+| `adherence_rate` | `fct_medication_adherence` (PDC at or above 0.8) | 82.3% |
+
+`new_patients` and `intake_forms_received` are kept apart on purpose. Counting patients from the raw
+forms gives 439 instead of 322, so the patient count is defined on the deduplicated table and the
+form count has a name that says what it is.
+
+```bash
+mf query --metrics new_patients,intake_forms_received --group-by metric_time__quarter
+mf query --metrics readmission_rate_30d --group-by department__department_name
+python scripts/check_metrics.py          # every metric must match its mart
+```
+
+[`scripts/check_metrics.py`](scripts/check_metrics.py) runs in CI and fails if a metric and the mart that answers the
+same question stop agreeing. On Windows, set `PYTHONUTF8=1` before running `mf`.
 
 ## Data model
 

@@ -1,0 +1,174 @@
+version: 2
+
+# Semantic layer (MetricFlow). Each metric is defined once here, on top of tested models,
+# and every consumer asks for it by name instead of rewriting the SQL.
+# scripts/check_metrics.py checks that the metrics match the marts.
+
+models:
+  - name: metricflow_time_spine
+    description: "Calendar (one row per day, 2024-2026) used by MetricFlow to group metrics by time."
+    time_spine:
+      standard_granularity_column: date_day
+    columns:
+      - name: date_day
+        granularity: day
+        data_tests: [unique, not_null]
+
+semantic_models:
+  - name: patients
+    description: "One row per real person, after resolving duplicated intake forms (dim_patient_intake_golden)."
+    model: ref('dim_patient_intake_golden')
+    defaults:
+      agg_time_dimension: first_seen
+    entities:
+      - name: person
+        type: primary
+        expr: match_key
+    dimensions:
+      - name: first_seen
+        type: time
+        type_params: {time_granularity: day}
+    measures:
+      - name: people
+        agg: count_distinct
+        expr: match_key
+
+  - name: intake_forms
+    description: "One row per intake form as submitted, duplicates included (stg_patient_intake)."
+    model: ref('stg_patient_intake')
+    defaults:
+      agg_time_dimension: submitted_at
+    entities:
+      - name: intake_form
+        type: primary
+        expr: intake_id
+    dimensions:
+      - name: submitted_at
+        type: time
+        type_params: {time_granularity: day}
+      - name: source_system
+        type: categorical
+    measures:
+      - name: forms
+        agg: count
+        expr: intake_id
+
+  - name: inpatient_stays
+    description: "Valid inpatient stays with the 30-day readmission flag (int_inpatient_stays)."
+    model: ref('int_inpatient_stays')
+    defaults:
+      agg_time_dimension: discharge_date
+    entities:
+      - name: stay
+        type: primary
+        expr: encounter_id
+      - name: department
+        type: foreign
+        expr: department_id
+    dimensions:
+      - name: discharge_date
+        type: time
+        type_params: {time_granularity: day}
+    measures:
+      - name: eligible_discharges
+        description: "Discharges whose full 30-day follow-up window fits inside 2025."
+        agg: sum
+        expr: "case when is_eligible_index_stay then 1 else 0 end"
+      - name: readmissions_30d
+        agg: sum
+        expr: "case when is_eligible_index_stay and is_readmitted_30d then 1 else 0 end"
+
+  - name: departments
+    description: "Departments, to break metrics down by department name."
+    model: ref('stg_departments')
+    entities:
+      - name: department
+        type: primary
+        expr: department_id
+    dimensions:
+      - name: department_name
+        type: categorical
+
+  - name: medication_treatments
+    description: "One row per patient and chronic drug, with proportion of days covered (fct_medication_adherence)."
+    model: ref('fct_medication_adherence')
+    defaults:
+      agg_time_dimension: first_fill
+    entities:
+      - name: treatment
+        type: primary
+        expr: "patient_id || '-' || drug_name"
+    dimensions:
+      - name: first_fill
+        type: time
+        type_params: {time_granularity: day}
+      - name: drug_name
+        type: categorical
+    measures:
+      - name: treatments
+        agg: count
+        expr: "1"
+      - name: adherent_treatments
+        agg: sum
+        expr: "case when adherence_status = 'adherent' then 1 else 0 end"
+
+metrics:
+  - name: new_patients
+    label: New patients
+    description: "Real people, counted from the deduplicated golden record. Use this, not intake_forms_received, to count patients."
+    type: simple
+    type_params: {measure: people}
+    config: {group: data_governance}
+
+  - name: intake_forms_received
+    label: Intake forms received
+    description: "Forms as submitted, duplicates included. A workload measure, not a patient count."
+    type: simple
+    type_params: {measure: forms}
+    config: {group: data_governance}
+
+  - name: eligible_discharges
+    label: Eligible discharges
+    description: "Inpatient discharges whose full 30-day follow-up window fits inside 2025."
+    type: simple
+    type_params: {measure: eligible_discharges}
+    config: {group: clinical_analytics}
+
+  - name: readmissions_30d
+    label: 30-day readmissions
+    description: "Eligible discharges followed by another inpatient admission within 30 days."
+    type: simple
+    type_params: {measure: readmissions_30d}
+    config: {group: clinical_analytics}
+
+  - name: treatments
+    label: Chronic treatments
+    description: "Patient and drug pairs with at least one fill."
+    type: simple
+    type_params: {measure: treatments}
+    config: {group: clinical_analytics}
+
+  - name: adherent_treatments
+    label: Adherent treatments
+    description: "Treatments with a proportion of days covered at or above the threshold (0.8)."
+    type: simple
+    type_params: {measure: adherent_treatments}
+    config: {group: clinical_analytics}
+
+  - name: readmission_rate_30d
+    label: 30-day readmission rate
+    description: "Share of eligible inpatient discharges followed by another inpatient admission within 30 days."
+    type: ratio
+    type_params:
+      numerator: readmissions_30d
+      denominator: eligible_discharges
+    config: {group: clinical_analytics}
+
+  - name: adherence_rate
+    label: Medication adherence rate
+    description: "Share of chronic treatments with a proportion of days covered at or above the threshold (0.8)."
+    type: ratio
+    type_params:
+      numerator: adherent_treatments
+      denominator: treatments
+    config: {group: clinical_analytics}
